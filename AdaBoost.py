@@ -17,7 +17,7 @@ def compute_error(w_i, y, y_pred):
     
     Note that all arrays should be the same length
     '''
-    return (sum(w_i * (y == y_pred).astype(int)))/sum(w_i)
+    return (sum(w_i * (np.not_equal(y, y_pred)).astype(int)))/sum(w_i)
 
 def compute_alpha(error):
     '''
@@ -35,7 +35,7 @@ def update_weights(w_i, alpha, y, y_pred):
     y_pred: predicted value by weak classifier  
     alpha: weight of weak classifier used to estimate y_pred
     '''  
-    return w_i * np.exp(alpha * (y == y_pred).astype(int))
+    return w_i * np.exp(alpha * (np.not_equal(y, y_pred)).astype(int))
 
 # Define AdaBoost class
 class AdaBoost:
@@ -61,12 +61,13 @@ class AdaBoost:
             
             # Set weights for current boosting iteration
             if m == 0:
-                w_i = np.ones(len(y)) * 1 / len(y)
+                w_i = np.ones(len(y)) * 1 / len(y)  # At m = 0, weights are all the same and equal to 1 / N
             else:
-                update_weights(w_i, alpha_m, y, y_pred)
+                w_i = update_weights(w_i, alpha_m, y, y_pred)
+            # print(w_i)
             
             # (a) Fit weak classifier and predict labels
-            G_m = DecisionTreeClassifier(max_depth = 1)
+            G_m = DecisionTreeClassifier(max_depth = 1)     # Stump: Two terminal-node classification tree
             G_m.fit(X, y, sample_weight = w_i)
             y_pred = G_m.predict(X)
             
@@ -74,10 +75,12 @@ class AdaBoost:
 
             # (b) Compute error
             error_m = compute_error(w_i, y, y_pred)
+            # print(error_m)
 
             # (c) Compute alpha
             alpha_m = compute_alpha(error_m)
             self.alphas.append(alpha_m)
+            # print(alpha_m)
 
         assert len(self.G_M) == len(self.alphas)
 
@@ -97,7 +100,8 @@ class AdaBoost:
             weak_preds.iloc[:,m] = y_pred_m
 
         # Estimate final predictions
-        y_pred = (-1 * np.sign(weak_preds.T.sum())).astype(int)
+        y_pred = (1 * np.sign(weak_preds.T.sum())).astype(int)
 
         return y_pred
       
+
